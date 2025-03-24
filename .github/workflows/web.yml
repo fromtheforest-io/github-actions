@@ -3,18 +3,6 @@ name: FTF Web Workflow
 on:
   workflow_call:
     inputs:
-      # context variable that gives the short name of the Git reference that triggered the workflow.
-      # for example: 
-      # Triggered by ${{ github.ref }} (full) ${{ github.ref_name }} (short)
-      # Branch push refs/heads/main main
-      # Tag push refs/tags/v1.2.3 v1.2.3
-      # Pull request refs/pull/123/merge 123
-      ref:
-        required: true
-        type: string
-      ref_name:
-        required: true
-        type: string
       stack_name:
         required: true
         type: string
@@ -116,11 +104,14 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run test
+
   deploy:
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs:
       - build
       - lint
+      - test
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
