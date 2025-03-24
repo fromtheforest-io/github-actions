@@ -49,8 +49,8 @@ jobs:
 
       - name: Get .env file
         run: |
-          echo $(aws ssm get-parameter --name $SSM_NAMESPACE/domain | jq -r '.Parameter.Value') > .env
-          cat .env
+          echo $(aws ssm get-parameter --name $SSM_NAMESPACE/domain | jq -r '.Parameter.Value') >> .env
+          echo BASE_API_URL=api.$(aws ssm get-parameter --name $SSM_NAMESPACE/domain | jq -r '.Parameter.Value') >> .env
 
       - name: Save .env atrifact 
         uses: actions/upload-artifact@v4
