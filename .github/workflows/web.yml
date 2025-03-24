@@ -35,14 +35,18 @@ jobs:
       - name: Get SSM Namespace
         id: get_ssm_namespace
         run: |
+            # Get the environment from the ref
+            # tag: vX.X.X = prod, staging-vX.X.X = staging, dev = dev
+            # main branch: dev
             if [[ ${{ github.ref_type }} == 'tag' ]]; then
               # TODO: validate tag. Is it a release tag? staging tag?
-              echo "ENV=$(jq SSM)" >> $GITHUB_ENV
+              export ENV=prod
             else
-              echo "ENV=${{ vars.SSM_ENVS }}" >> $GITHUB_ENV
+              export ENV=dev
             fi
-            echo "SSM_NAMESPACE=/${{vars.SSM_APP_NAME}}/$ENV" >> $GITHUB_ENV
+            echo "SSM_NAMESPACE=/${{vars.SSM_ORG_NAME}}/$ENV" >> $GITHUB_ENV
             echo $SSM_NAMESPACE
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
