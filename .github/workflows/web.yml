@@ -52,11 +52,11 @@ jobs:
           echo $(aws ssm get-parameter --name $SSM_NAMESPACE/domain | jq -r '.Parameter.Value') > .env
           cat .env
 
-      - name: Create .env file 
+      - name: Save .env atrifact 
         uses: actions/upload-artifact@v4
         with:
-          name: build
-          path: .env 
+          name: environment variables 
+          path: .env
 
 
   install:
