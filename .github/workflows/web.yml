@@ -4,8 +4,21 @@ on:
   workflow_call:
     inputs:
       stack_name:
-        required: true
         type: string
+        required: true
+      url: 
+        type: string
+        required: true
+      ssm_org_name:
+        type: string
+        required: true
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_REGION:
+        required: true
 
 jobs:
   secrets: 
@@ -19,7 +32,7 @@ jobs:
           cache: "npm"
       - name: Load Secrets
         id: load_secrets
-        run: echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" >> $GITHUB_ENV
+        run: echo "NEXT_PUBLIC_API_URL=${{ inputs.NEXT_PUBLIC_API_URL }}" >> $GITHUB_ENV
       - name: Get SSM Namespace
         id: get_ssm_namespace
         run: |
@@ -32,7 +45,7 @@ jobs:
             else
               export ENV=dev
             fi
-            echo "SSM_NAMESPACE=/${{vars.SSM_ORG_NAME}}/$ENV" >> $GITHUB_ENV
+            echo "SSM_NAMESPACE=/${{inputs.ssm_org_name}}/$ENV" >> $GITHUB_ENV
             echo $SSM_NAMESPACE
 
       - name: Configure AWS credentials
@@ -115,15 +128,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+          
       - name: Set Variables
         run: |
-          export APP=ftf
+          export APP=${{ inputs.SSM_ORG_NAME}}
           export ENV=dev
           export SSM_NAMESPACE=/$APP/$ENV
           export PREFIX=$APP-$ENV
