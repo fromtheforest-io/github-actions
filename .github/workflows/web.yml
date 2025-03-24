@@ -6,9 +6,6 @@ on:
       stack_name:
         type: string
         required: true
-      url: 
-        type: string
-        required: true
       ssm_org_name:
         type: string
         required: true
@@ -30,9 +27,6 @@ jobs:
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
-      - name: Load Secrets
-        id: load_secrets
-        run: echo "NEXT_PUBLIC_API_URL=${{ inputs.NEXT_PUBLIC_API_URL }}" >> $GITHUB_ENV
       - name: Get SSM Namespace
         id: get_ssm_namespace
         run: |
@@ -40,13 +34,11 @@ jobs:
             # tag: vX.X.X = prod, staging-vX.X.X = staging, dev = dev
             # main branch: dev
             if [[ ${{ github.ref_type }} == 'tag' ]]; then
-              # TODO: validate tag. Is it a release tag? staging tag?
               export ENV=prod
             else
               export ENV=dev
             fi
             echo "SSM_NAMESPACE=/${{inputs.ssm_org_name}}/$ENV" >> $GITHUB_ENV
-            echo $SSM_NAMESPACE
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
@@ -54,6 +46,18 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get .env file
+        run: |
+          echo $(aws ssm get-parameter --name $SSM_NAMESPACE/domain | jq -r '.Parameter.Value') > .env
+          cat .env
+
+      - name: Create .env file 
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: .env 
+
 
   install:
     name: Install
@@ -144,14 +148,13 @@ jobs:
           export ENV=dev
           export SSM_NAMESPACE=/$APP/$ENV
           export PREFIX=$APP-$ENV
-          export WEB_SSM_NAMESPACE=/$APP/$ENV/${{ inputs.stack_name}}
-
+          export WEB_SSM_NAMESPACE=/$APP/$ENV/${{ inputs.stack_name }}
           export DOMAIN_NAME=$(aws ssm get-parameter --name $SSM_NAMESPACE/domain| jq -r '.Parameter.Value')
 
           echo "SSM_NAMESPACE=$SSM_NAMESPACE" >> $GITHUB_ENV
+          echo "WEB_SSM_NAMESPACE=$WEB_SSM_NAMESPACE" >> $GITHUB_ENV
           echo "STACK_NAME=$PREFIX-${{ inputs.stack_name }}" >> $GITHUB_ENV
           echo "TEMPLATE=./infra/template.yml" >> $GITHUB_ENV
-
           echo "DOMAIN_NAME=$DOMAIN_NAME" >> $GITHUB_ENV
 
       - name: Validate
