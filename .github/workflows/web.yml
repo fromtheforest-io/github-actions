@@ -30,9 +30,6 @@ jobs:
       - name: Get SSM Namespace
         id: get_ssm_namespace
         run: |
-            # Get the environment from the ref
-            # tag: vX.X.X = prod, staging-vX.X.X = staging, dev = dev
-            # main branch: dev
             if [[ ${{ github.ref_type }} == 'tag' ]]; then
               export ENV=prod
             else
@@ -145,7 +142,12 @@ jobs:
       - name: Set Variables
         run: |
           export APP=${{ inputs.SSM_ORG_NAME}}
-          export ENV=dev
+          if [[ ${{ github.ref_type }} == 'tag' ]]; then
+            export ENV=prod
+          else
+            export ENV=dev
+          fi
+
           export SSM_NAMESPACE=/$APP/$ENV
           export STACK_PREFIX=$APP-$ENV
           export DOMAIN_NAME=$(aws ssm get-parameter --name $SSM_NAMESPACE/domain| jq -r '.Parameter.Value')
