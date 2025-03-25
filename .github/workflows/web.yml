@@ -147,27 +147,25 @@ jobs:
           export APP=${{ inputs.SSM_ORG_NAME}}
           export ENV=dev
           export SSM_NAMESPACE=/$APP/$ENV
-          export PREFIX=$APP-$ENV
-          export WEB_SSM_NAMESPACE=/$APP/$ENV/${{ inputs.stack_name }}
+          export STACK_PREFIX=$APP-$ENV
           export DOMAIN_NAME=$(aws ssm get-parameter --name $SSM_NAMESPACE/domain| jq -r '.Parameter.Value')
 
           echo "SSM_NAMESPACE=$SSM_NAMESPACE" >> $GITHUB_ENV
-          echo "WEB_SSM_NAMESPACE=$WEB_SSM_NAMESPACE" >> $GITHUB_ENV
-          echo "STACK_NAME=$PREFIX-${{ inputs.stack_name }}" >> $GITHUB_ENV
-          echo "TEMPLATE=./infra/template.yml" >> $GITHUB_ENV
+          echo "WEB_SSM_NAMESPACE=$SSM_NAMESPACE/${{ inputs.stack_name }}" >> $GITHUB_ENV
+          echo "STACK_NAME=$STACK_PREFIX-${{ inputs.stack_name }}" >> $GITHUB_ENV
           echo "DOMAIN_NAME=$DOMAIN_NAME" >> $GITHUB_ENV
 
       - name: Validate
         run: |
           aws cloudformation validate-template \
-            --template-body file://$TEMPLATE \
+            --template-body file://./infra/template.yml \
             --region ${{ secrets.AWS_REGION }}
 
       - name: Deploy Infrastructure
         run: |
           aws cloudformation deploy \
             --stack-name $STACK_NAME \
-            --template-file $TEMPLATE \
+            --template-file ./infra/template.yml \
             --no-fail-on-empty-changeset \
             --region ${{ secrets.AWS_REGION }} \
             --parameter-overrides \
