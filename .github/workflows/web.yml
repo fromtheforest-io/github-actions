@@ -172,6 +172,7 @@ jobs:
             --region ${{ secrets.AWS_REGION }} \
             --parameter-overrides \
               HostedZoneName=$DOMAIN_NAME \
+              HostedZoneId=$SSM_NAMESPACE/hosted-zone/id \
               DomainName=$DOMAIN_NAME \
               WebSsmNamespace=$WEB_SSM_NAMESPACE
 
