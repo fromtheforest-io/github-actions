@@ -1,0 +1,58 @@
+name: Destroy 
+
+on:
+  workflow_call:
+    inputs:
+      stack_name:
+        type: string
+        required: true
+      ssm_org_name:
+        type: string
+        required: true
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_REGION:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set Variables
+      run: |
+        export APP=${{ inputs.SSM_ORG_NAME}}
+
+        # Get the environment from the ref
+        # tag: vX.X.X = prod
+        # main branch: dev
+        if [[ ${{ github.ref_type }} == 'tag' ]]; then
+            export ENV=prod
+        else
+            export ENV=dev
+        fi
+
+        echo "SSM_NAMESPACE=/$${{ inputs.ssm_org_name }}/$ENV" >> $GITHUB_ENV
+        echo "STACK_PREFIX=$APP-$ENV" >> $GITHUB_ENV
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4.0.2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Delete CloudFormation stack
+      run: |
+        export STACK_NAME=$STACK_PREFIX-${{ inputs.stack_name }}
+        aws cloudformation delete-stack \
+            --stack-name $STACK_NAME \
+            --region ${{ secrets.AWS_REGION }}
+
+        aws cloudformation wait stack-delete-complete \
+            --stack-name $STACK_NAME \
+            --region ${{ secrets.AWS_REGION }}
+   
