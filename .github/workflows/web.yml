@@ -171,7 +171,7 @@ jobs:
             --parameter-overrides \
               HostedZoneName=$DOMAIN_NAME \
               HostedZoneId=$SSM_NAMESPACE/hosted-zone/id \
-              DomainName=$DOMAIN_NAME \
+              DomainName=$SSM_NAMESPACE/domain \
               WebSsmNamespace=$WEB_SSM_NAMESPACE
 
       - name: Download build artifact
