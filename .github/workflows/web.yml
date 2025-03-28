@@ -6,9 +6,6 @@ on:
       stack_name:
         type: string
         required: true
-      ssm_org_name:
-        type: string
-        required: true
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
