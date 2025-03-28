@@ -1,0 +1,46 @@
+name: Set Stack Vars
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+
+    outputs:
+      stack_name:
+        description: "Full stack name"
+        value: ${{ jobs.set-vars.outputs.stack_name }}
+      ssm_namespace:
+        description: "SSM namespace"
+        value: ${{ jobs.set-vars.outputs.ssm_namespace }}
+
+jobs:
+  set-vars:
+    runs-on: ubuntu-latest
+    outputs:
+      stack_name: ${{ steps.set-env.outputs.stack_name }}
+      ssm_namespace: ${{ steps.set-env.outputs.ssm_namespace }}
+
+    steps:
+      - name: Set Environment Vars
+        id: set-env
+        run: |
+          APP="${{ vars.SSM_ORG_NAME }}"
+          REF_TYPE="${{ github.ref_type }}"
+
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            ENV="prod"
+          else
+            ENV="dev"
+          fi
+
+          STACK_PREFIX="$APP-$ENV"
+          STACK_NAME="$STACK_PREFIX-${{ inputs.service_name }}"
+          SSM_NAMESPACE="/$APP/$ENV"
+
+          echo "STACK_NAME=$STACK_NAME" >> $GITHUB_ENV
+          echo "SSM_NAMESPACE=$SSM_NAMESPACE" >> $GITHUB_ENV
+
+          echo "stack_name=$STACK_NAME" >> $GITHUB_OUTPUT
+          echo "ssm_namespace=$SSM_NAMESPACE" >> $GITHUB_OUTPUT
