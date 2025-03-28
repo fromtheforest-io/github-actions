@@ -1,4 +1,4 @@
-name: Set Stack Vars
+name: Set Stack Variables
 
 on:
   workflow_call:
@@ -10,13 +10,13 @@ on:
     outputs:
       stack_name:
         description: "Full stack name"
-        value: ${{ jobs.set-vars.outputs.stack_name }}
+        value: ${{ jobs.stack_context.outputs.stack_name }}
       ssm_namespace:
         description: "SSM namespace"
-        value: ${{ jobs.set-vars.outputs.ssm_namespace }}
+        value: ${{ jobs.stack_context.outputs.ssm_namespace }}
 
 jobs:
-  set-vars:
+  stack_context:
     runs-on: ubuntu-latest
     outputs:
       stack_name: ${{ steps.set-env.outputs.stack_name }}
