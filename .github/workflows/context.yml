@@ -21,6 +21,7 @@ jobs:
     outputs:
       stack_name: ${{ steps.stack_context.outputs.stack_name }}
       ssm_namespace: ${{ steps.stack_context.outputs.ssm_namespace }}
+      stack_prefix: ${{ steps.stack_context.outputs.stack_prefix }}
 
     steps:
       - name: Set Environment Vars
@@ -41,6 +42,8 @@ jobs:
 
           echo "STACK_NAME=$STACK_NAME" >> $GITHUB_ENV
           echo "SSM_NAMESPACE=$SSM_NAMESPACE" >> $GITHUB_ENV
+          echo "STACK_PREFIX=$STACK_PREFIX" >> $GITHUB_ENV
 
           echo "stack_name=$STACK_NAME" >> $GITHUB_OUTPUT
           echo "ssm_namespace=$SSM_NAMESPACE" >> $GITHUB_OUTPUT
+          echo "stack_prefix=$STACK_PREFIX" >> $GITHUB_OUTPUT
