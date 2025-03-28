@@ -19,12 +19,12 @@ jobs:
   stack_context:
     runs-on: ubuntu-latest
     outputs:
-      stack_name: ${{ steps.set-env.outputs.stack_name }}
-      ssm_namespace: ${{ steps.set-env.outputs.ssm_namespace }}
+      stack_name: ${{ steps.stack_context.outputs.stack_name }}
+      ssm_namespace: ${{ steps.stack_context.outputs.ssm_namespace }}
 
     steps:
       - name: Set Environment Vars
-        id: set-env
+        id: stack_context
         run: |
           APP="${{ vars.SSM_ORG_NAME }}"
           REF_TYPE="${{ github.ref_type }}"
