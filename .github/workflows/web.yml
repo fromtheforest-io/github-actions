@@ -18,24 +18,24 @@ on:
         required: true
 
 jobs:
+  # define's SSM_NAMESPACE / STACK_NAME consistently
+  context:
+    uses: fromtheforest-io/github-actions/.github/workflows/context.yml@main
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+    with:
+      service_name: ${{inputs.stack_name}} 
+
   secrets: 
     name: Load Secrets
     runs-on: ubuntu-latest
+    needs:
+      - context
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
-      - name: Get SSM Namespace
-        id: get_ssm_namespace
-        run: |
-            if [[ ${{ github.ref_type }} == 'tag' ]]; then
-              export ENV=prod
-            else
-              export ENV=dev
-            fi
-            echo "SSM_NAMESPACE=/${{inputs.ssm_org_name}}/$ENV" >> $GITHUB_ENV
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
@@ -46,8 +46,8 @@ jobs:
 
       - name: Get .env file
         run: |
-          echo $(aws ssm get-parameter --name $SSM_NAMESPACE/domain | jq -r '.Parameter.Value') >> .env
-          echo BASE_API_URL=api.$(aws ssm get-parameter --name $SSM_NAMESPACE/domain | jq -r '.Parameter.Value') >> .env
+          echo $(aws ssm get-parameter --name ${{ needs.context.outputs.ssm_namespace }}/domain | jq -r '.Parameter.Value') >> .env
+          echo BASE_API_URL=api.$(aws ssm get-parameter --name ${{ needs.context.outputs.ssm_namespace }}/domain | jq -r '.Parameter.Value') >> .env
 
       - name: Save .env atrifact 
         uses: actions/upload-artifact@v4
@@ -125,6 +125,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs:
+      - context
       - build
       - lint
       - test
@@ -141,21 +142,8 @@ jobs:
           
       - name: Set Variables
         run: |
-          export APP=${{ inputs.SSM_ORG_NAME}}
-          if [[ ${{ github.ref_type }} == 'tag' ]]; then
-            export ENV=prod
-          else
-            export ENV=dev
-          fi
-
-          export SSM_NAMESPACE=/$APP/$ENV
-          export STACK_PREFIX=$APP-$ENV
-          export DOMAIN_NAME=$(aws ssm get-parameter --name $SSM_NAMESPACE/domain| jq -r '.Parameter.Value')
-
-          echo "SSM_NAMESPACE=$SSM_NAMESPACE" >> $GITHUB_ENV
-          echo "WEB_SSM_NAMESPACE=$SSM_NAMESPACE/${{ inputs.stack_name }}" >> $GITHUB_ENV
-          echo "STACK_NAME=$STACK_PREFIX-${{ inputs.stack_name }}" >> $GITHUB_ENV
-          echo "DOMAIN_NAME=$DOMAIN_NAME" >> $GITHUB_ENV
+          echo "WEB_SSM_NAMESPACE=${{ needs.context.outputs.ssm_namespace }}/${{ inputs.stack_name }}" >> $GITHUB_ENV
+          echo "DOMAIN_NAME=$(aws ssm get-parameter --name ${{ needs.context.outputs.ssm_namespace }}/domain| jq -r '.Parameter.Value')" >> $GITHUB_ENV
 
       - name: Validate
         run: |
@@ -166,14 +154,14 @@ jobs:
       - name: Deploy Infrastructure
         run: |
           aws cloudformation deploy \
-            --stack-name $STACK_NAME \
+            --stack-name ${{ needs.context.outputs.stack_name }} \
             --template-file ./infra/template.yml \
             --no-fail-on-empty-changeset \
             --region ${{ secrets.AWS_REGION }} \
             --parameter-overrides \
               HostedZoneName=$DOMAIN_NAME \
-              HostedZoneId=$SSM_NAMESPACE/hosted-zone/id \
-              DomainName=$SSM_NAMESPACE/domain \
+              HostedZoneId=${{ needs.context.outputs.ssm_namespace }}/hosted-zone/id \
+              DomainName=${{ needs.context.outputs.ssm_namespace }}/domain \
               WebSsmNamespace=$WEB_SSM_NAMESPACE
 
       - name: Download build artifact
