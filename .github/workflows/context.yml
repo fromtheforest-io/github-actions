@@ -14,6 +14,9 @@ on:
       ssm_namespace:
         description: "SSM namespace"
         value: ${{ jobs.stack_context.outputs.ssm_namespace }}
+      stack_prefix:
+        description: "Stack prefix"
+        value: ${{ jobs.stack_context.outputs.stack_prefix }}
 
 jobs:
   stack_context:
