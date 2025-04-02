@@ -17,7 +17,9 @@ on:
       stack_prefix:
         description: "Stack prefix"
         value: ${{ jobs.stack_context.outputs.stack_prefix }}
-
+      env:
+        description: "Environment"
+        value: ${{ jobs.stack_context.outputs.env }}
 jobs:
   stack_context:
     runs-on: ubuntu-latest
@@ -25,6 +27,7 @@ jobs:
       stack_name: ${{ steps.stack_context.outputs.stack_name }}
       ssm_namespace: ${{ steps.stack_context.outputs.ssm_namespace }}
       stack_prefix: ${{ steps.stack_context.outputs.stack_prefix }}
+      env: ${{ steps.stack_context.outputs.env }}
 
     steps:
       - name: Set Environment Vars
@@ -46,7 +49,9 @@ jobs:
           echo "STACK_NAME=$STACK_NAME" >> $GITHUB_ENV
           echo "SSM_NAMESPACE=$SSM_NAMESPACE" >> $GITHUB_ENV
           echo "STACK_PREFIX=$STACK_PREFIX" >> $GITHUB_ENV
+          echo "ENV=$ENV" >> $GITHUB_ENV
 
           echo "stack_name=$STACK_NAME" >> $GITHUB_OUTPUT
           echo "ssm_namespace=$SSM_NAMESPACE" >> $GITHUB_OUTPUT
           echo "stack_prefix=$STACK_PREFIX" >> $GITHUB_OUTPUT
+          echo "env=$ENV" >> $GITHUB_OUTPUT
