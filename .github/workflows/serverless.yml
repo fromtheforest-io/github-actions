@@ -9,7 +9,7 @@ on:
                 description: "Env (stage) to deploy to (e.g., dev, prod)"
                 default: "dev"
         secrets:
-            serverless_access_key:
+            SERVERLESS_ACCESS_KEY:
                 required: true
                 description: "Serverless Framework access key"
 jobs:
