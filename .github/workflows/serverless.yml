@@ -3,16 +3,15 @@ name: Deploy Go Serverless Framework
 on:
     workflow_call:
         inputs:
-            serverless_access_key:
-                required: true
-                type: string
-                description: "serverless > v4 requires a serverless access key"
             env:
                 required: true
                 type: string
                 description: "Env (stage) to deploy to (e.g., dev, prod)"
                 default: "dev"
-
+        secrets:
+            serverless_access_key:
+                required: true
+                description: "Serverless Framework access key"
 jobs:
     deploy:
         runs-on: ubuntu-latest
@@ -67,5 +66,5 @@ jobs:
 
             - name: Deploy Serverless
               env:
-                SERVERLESS_ACCESS_KEY: ${{ inputs.serverless_access_key }}
+                SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
               run: npx serverless deploy --stage ${{ inputs.env }}
