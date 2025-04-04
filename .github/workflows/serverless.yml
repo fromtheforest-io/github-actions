@@ -1,0 +1,51 @@
+name: Deploy Go Serverless Framework 
+
+on:
+    workflow_call:
+        inputs:
+            env:
+                required: true
+                type: string
+                description: "Env (stage) to deploy to (e.g., dev, prod)"
+                default: "dev"
+
+jobs:
+    stack_context:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/setup-node@v3
+
+            - name: Install dependencies
+              run: npm install serverless serverless-prune-plugin
+
+            - name: Build Go binaries
+              run: |
+                set -euo pipefail
+
+                # Top-level directories to search for Lambdas
+                LAMBDA_DIRS=("http" "events")
+
+                echo "Cleaning up old zip/bootstrap files..."
+                for dir in "${LAMBDA_DIRS[@]}"; do
+                find "$dir" -type f \( -name 'bootstrap' -o -name '*.zip' \) -exec rm -f {} +
+                done
+
+                echo "Building Lambda functions..."
+                for dir in "${LAMBDA_DIRS[@]}"; do
+                while IFS= read -r -d '' main_file; do
+                    lambda_dir="$(dirname "$main_file")"
+                    function_name="$(basename "$lambda_dir")"
+
+                    echo "Building $lambda_dir"
+                    GOOS=linux GOARCH=amd64 go build -o "$lambda_dir/bootstrap" "$main_file"
+                    zip -j "$lambda_dir/$function_name.zip" "$lambda_dir/bootstrap"
+                    rm "$lambda_dir/bootstrap"
+                done < <(find "$dir" -type f -name main.go -print0)
+                done
+                echo "Build complete."
+                
+            - name: Deploy Serverless
+              env:
+                SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+              run: npx serverless deploy --stage ${{ inputs.env }}
