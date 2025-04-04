@@ -10,7 +10,7 @@ on:
                 default: "dev"
 
 jobs:
-    stack_context:
+    deploy:
         runs-on: ubuntu-latest
 
         steps:
