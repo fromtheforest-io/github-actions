@@ -33,28 +33,34 @@ jobs:
               run: |
                 set -euo pipefail
 
-                # Top-level directories to search for Lambdas
                 LAMBDA_DIRS=("http" "events")
 
                 echo "Cleaning up old zip/bootstrap files..."
                 for dir in "${LAMBDA_DIRS[@]}"; do
-                find "$dir" -type f \( -name 'bootstrap' -o -name '*.zip' \) -exec rm -f {} +
+                  if [ -d "$dir" ]; then
+                    find "$dir" -type f \( -name 'bootstrap' -o -name '*.zip' \) -exec rm -f {} +
+                  else
+                    echo "Skipping cleanup: directory '$dir' does not exist."
+                  fi
                 done
 
                 echo "Building Lambda functions..."
                 for dir in "${LAMBDA_DIRS[@]}"; do
-                while IFS= read -r -d '' main_file; do
-                    lambda_dir="$(dirname "$main_file")"
-                    function_name="$(basename "$lambda_dir")"
+                  if [ -d "$dir" ]; then
+                    while IFS= read -r -d '' main_file; do
+                      lambda_dir="$(dirname "$main_file")"
+                      function_name="$(basename "$lambda_dir")"
 
-                    echo "Building $lambda_dir"
-                    GOOS=linux GOARCH=amd64 go build -o "$lambda_dir/bootstrap" "$main_file"
-                    zip -j "$lambda_dir/$function_name.zip" "$lambda_dir/bootstrap"
-                    rm "$lambda_dir/bootstrap"
-                done < <(find "$dir" -type f -name main.go -print0)
+                      echo "Building $lambda_dir"
+                      GOOS=linux GOARCH=amd64 go build -o "$lambda_dir/bootstrap" "$main_file"
+                      zip -j "$lambda_dir/$function_name.zip" "$lambda_dir/bootstrap"
+                      rm "$lambda_dir/bootstrap"
+                    done < <(find "$dir" -type f -name main.go -print0)
+                  else
+                    echo "Skipping build: directory '$dir' does not exist."
+                  fi
                 done
-                echo "Build complete."
-                
+
             - name: Deploy Serverless
               env:
                 SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
